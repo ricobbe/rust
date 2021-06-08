@@ -34,8 +34,8 @@ use object::write::Object;
 use object::{Architecture, BinaryFormat, Endianness, FileFlags, SectionFlags, SectionKind};
 use tempfile::Builder as TempFileBuilder;
 
-use std::cmp::Ordering;
 use std::ffi::OsString;
+use std::iter::FromIterator;
 use std::path::{Path, PathBuf};
 use std::process::{ExitStatus, Output, Stdio};
 use std::{ascii, char, env, fmt, fs, io, mem, str};
@@ -538,7 +538,7 @@ fn link_rlib<'a, B: ArchiveBuilder<'a>>(
 /// linker appears to expect only a single import library for each library used, so we need to
 /// collate the symbols together by library name before generating the import libraries.
 fn collate_raw_dylibs(used_libraries: &[NativeLib]) -> Vec<(String, Vec<DllImport>)> {
-    let mut dylib_table: FxHashMap<String, FxHashSet<Symbol>> = FxHashMap::default();
+    let mut dylib_table: FxHashMap<String, FxHashSet<DllImport>> = FxHashMap::default();
 
     for lib in used_libraries {
         if lib.kind == NativeLibKind::RawDylib {
@@ -550,30 +550,23 @@ fn collate_raw_dylibs(used_libraries: &[NativeLib]) -> Vec<(String, Vec<DllImpor
             } else {
                 format!("{}.dll", name)
             };
-            dylib_table
-                .entry(name)
-                .or_default()
-                .extend(lib.dll_imports.iter().map(|import| import.name));
+            dylib_table.entry(name).or_default().extend(lib.dll_imports.iter().cloned());
         }
     }
 
-    // FIXME: when we add support for ordinals, fix this to propagate ordinals.  Also figure out
-    // what we should do if we have two DllImport values with the same name but different
-    // ordinals.
+    // Rustc already signals an error if we have two imports with the same name but different
+    // calling conventions (or function signatures), so we don't have pay attention to those
+    // when ordering.
+    // FIXME: when we add support for ordinals, figure out if we need to do anything if we
+    // have two DllImport values with the same name but different ordinals.
     let mut result = dylib_table
         .into_iter()
-        .map(|(lib_name, imported_names)| {
-            let mut names = imported_names
-                .iter()
-                .map(|name| DllImport { name: *name, ordinal: None })
-                .collect::<Vec<_>>();
-            names.sort_unstable_by(|a: &DllImport, b: &DllImport| {
-                match a.name.as_str().cmp(&b.name.as_str()) {
-                    Ordering::Equal => a.ordinal.cmp(&b.ordinal),
-                    x => x,
-                }
+        .map(|(lib_name, import_set)| {
+            let mut imports = Vec::from_iter(import_set.into_iter());
+            imports.sort_unstable_by(|a: &DllImport, b: &DllImport| {
+                a.name.as_str().cmp(&b.name.as_str())
             });
-            (lib_name, names)
+            (lib_name, imports)
         })
         .collect::<Vec<_>>();
     result.sort_unstable_by(|a: &(String, Vec<DllImport>), b: &(String, Vec<DllImport>)| {

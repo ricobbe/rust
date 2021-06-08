@@ -1,0 +1,6 @@
+stdcall_fn_1(14)
+stdcall_fn_2(16, 3.500000)
+stdcall_fn_3(3.500000)
+stdcall_fn_4(1, 2, 3.000000)
+stdcall_fn_5(S { x: 1, y: 2 }, 16)
+stdcall_fn_6(S { x: 10, y: 12 })

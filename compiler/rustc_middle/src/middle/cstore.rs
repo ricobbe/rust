@@ -98,10 +98,30 @@ pub struct NativeLib {
     pub dll_imports: Vec<DllImport>,
 }
 
-#[derive(Clone, Debug, Encodable, Decodable, HashStable)]
+#[derive(Clone, Debug, PartialEq, Eq, Encodable, Decodable, Hash, HashStable)]
 pub struct DllImport {
     pub name: Symbol,
     pub ordinal: Option<u16>,
+    /// Calling convention for the function.
+    ///
+    /// On x86_64, this is always `DllCallingConvention::C`; on i686, it can be any
+    /// of the values, and we use `DllCallingConvention::C` to represent `"cdecl"`.
+    pub calling_convention: DllCallingConvention,
+}
+
+/// Calling convention for a function defined in an external library.
+///
+/// The usize value, where present, indicates the size of the function's argument list
+/// in UNITs.
+///
+/// FIXME: determine whether argument list size is supposed to be specified in bytes
+/// or in words and update the comment above accordingly.
+#[derive(Clone, Debug, PartialEq, Eq, Encodable, Decodable, Hash, HashStable)]
+pub enum DllCallingConvention {
+    C,
+    Stdcall(usize),
+    Fastcall(usize),
+    Vectorcall(usize),
 }
 
 #[derive(Clone, TyEncodable, TyDecodable, HashStable, Debug)]
