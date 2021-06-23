@@ -393,7 +393,7 @@ impl<'a> LlvmArchiveBuilder<'a> {
     }
 
     fn i686_decorated_name(import: &DllImport) -> CString {
-        let name = import.name.to_string();
+        let name = import.name;
         // We verified during construction that `name` does not contain any NULL characters, so the
         // conversion to CString is guaranteed to succeed.
         CString::new(match import.calling_convention {
