@@ -112,10 +112,7 @@ pub struct DllImport {
 /// Calling convention for a function defined in an external library.
 ///
 /// The usize value, where present, indicates the size of the function's argument list
-/// in UNITs.
-///
-/// FIXME: determine whether argument list size is supposed to be specified in bytes
-/// or in words and update the comment above accordingly.
+/// in bytes.
 #[derive(Clone, Debug, PartialEq, Eq, Encodable, Decodable, Hash, HashStable)]
 pub enum DllCallingConvention {
     C,
