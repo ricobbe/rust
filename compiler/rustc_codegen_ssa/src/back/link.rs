@@ -563,9 +563,7 @@ fn collate_raw_dylibs(used_libraries: &[NativeLib]) -> Vec<(String, Vec<DllImpor
         .into_iter()
         .map(|(lib_name, import_set)| {
             let mut imports = Vec::from_iter(import_set.into_iter());
-            imports.sort_unstable_by(|a: &DllImport, b: &DllImport| {
-                a.name.as_str().cmp(&b.name.as_str())
-            });
+            imports.sort_unstable_by_key(|x: &DllImport| x.name.as_str());
             (lib_name, imports)
         })
         .collect::<Vec<_>>();
