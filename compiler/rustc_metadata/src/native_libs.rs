@@ -394,7 +394,7 @@ impl Collector<'tcx> {
                 .map_bound(|slice| self.tcx.mk_type_list(slice.iter())),
         );
 
-        // stdcall on i686 never allocates less than 32 bits for an argument.
+        // stdcall and fastcall on i686 never allocate less than 32 bits for an argument.
         let min_arg_size: usize = 4;
 
         argument_types.iter().fold(0, |accum: usize, ty: Ty<'_>| {
