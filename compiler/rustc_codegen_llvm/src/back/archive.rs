@@ -206,14 +206,16 @@ impl<'a> ArchiveBuilder<'a> for LlvmArchiveBuilder<'a> {
         // All import names are Rust identifiers and therefore cannot contain \0 characters.
         // FIXME: when support for #[link_name] implemented, ensure that import.name values don't
         // have any \0 characters
-        let import_name_vector: Vec<CString> = if self.config.sess.target.arch == "x86" {
-            dll_imports.iter().map(LlvmArchiveBuilder::i686_decorated_name).collect()
-        } else {
-            dll_imports
-                .iter()
-                .map(|import: &DllImport| CString::new(import.name.to_string()).unwrap())
-                .collect()
-        };
+        let import_name_vector: Vec<CString> = dll_imports
+            .iter()
+            .map(|import: &DllImport| {
+                if self.config.sess.target.arch == "x86" {
+                    LlvmArchiveBuilder::i686_decorated_name(import)
+                } else {
+                    CString::new(import.name.to_string()).unwrap()
+                }
+            })
+            .collect();
 
         let output_path_z = rustc_fs_util::path_to_c_string(&output_path);
 
