@@ -424,7 +424,15 @@ impl Collector<'tcx> {
                 }
             }
         } else {
-            DllCallingConvention::C
+            match abi {
+                Abi::C { .. } | Abi::Win64 => DllCallingConvention::C,
+                _ => {
+                    self.tcx.sess.span_fatal(
+                        item.span,
+                        r#"ABI not supported by `#[link(kind = "raw-dylib")]` on this architecture"#,
+                    );
+                }
+            }
         };
         DllImport { name: item.ident.name, ordinal: None, calling_convention }
     }
