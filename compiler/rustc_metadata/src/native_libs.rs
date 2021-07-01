@@ -394,16 +394,15 @@ impl Collector<'tcx> {
                 .map_bound(|slice| self.tcx.mk_type_list(slice.iter())),
         );
 
-        // stdcall and fastcall on i686 never allocate less than 32 bits for an argument.
-        let min_arg_size: usize = 4;
-
         argument_types.iter().fold(0, |accum: usize, ty: Ty<'_>| {
             let layout = self
                 .tcx
                 .layout_of(ParamEnvAnd { param_env: ParamEnv::empty(), value: ty })
                 .expect("layout")
                 .layout;
-            accum + std::cmp::max(min_arg_size, layout.size.bytes_usize())
+                // In both stdcall and fastcall, we always round up the argument size to the
+                // nearest multiple of 4 bytes.
+                accum + ((layout.size.bytes_usize() + 3) & !3)
         })
     }
 
@@ -425,7 +424,7 @@ impl Collector<'tcx> {
             }
         } else {
             match abi {
-                Abi::C { .. } | Abi::Win64 => DllCallingConvention::C,
+                Abi::C { .. } | Abi::Win64 | Abi::System { .. } => DllCallingConvention::C,
                 _ => {
                     self.tcx.sess.span_fatal(
                         item.span,
