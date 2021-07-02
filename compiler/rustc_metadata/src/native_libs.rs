@@ -400,9 +400,9 @@ impl Collector<'tcx> {
                 .layout_of(ParamEnvAnd { param_env: ParamEnv::empty(), value: ty })
                 .expect("layout")
                 .layout;
-                // In both stdcall and fastcall, we always round up the argument size to the
-                // nearest multiple of 4 bytes.
-                accum + ((layout.size.bytes_usize() + 3) & !3)
+            // In both stdcall and fastcall, we always round up the argument size to the
+            // nearest multiple of 4 bytes.
+            accum + ((layout.size.bytes_usize() + 3) & !3)
         })
     }
 
