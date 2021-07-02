@@ -1,6 +1,6 @@
 # Test the behavior of #[link(.., kind = "raw-dylib")] with alternative calling conventions.
 
-# only-pc-windows-msvc
+# only-i686-pc-windows-msvc
 
 -include ../../run-make-fulldeps/tools.mk
 
