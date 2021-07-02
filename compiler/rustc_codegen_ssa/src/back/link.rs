@@ -345,7 +345,7 @@ fn link_rlib<'a, B: ArchiveBuilder<'a>>(
     }
 
     for (raw_dylib_name, raw_dylib_imports) in
-        collate_raw_dylibs(&codegen_results.crate_info.used_libraries)
+        collate_raw_dylibs(sess, &codegen_results.crate_info.used_libraries)
     {
         ab.inject_dll_import_lib(&raw_dylib_name, &raw_dylib_imports, tmpdir);
     }
@@ -537,7 +537,10 @@ fn link_rlib<'a, B: ArchiveBuilder<'a>>(
 /// then the CodegenResults value contains one NativeLib instance for each block.  However, the
 /// linker appears to expect only a single import library for each library used, so we need to
 /// collate the symbols together by library name before generating the import libraries.
-fn collate_raw_dylibs(used_libraries: &[NativeLib]) -> Vec<(String, Vec<DllImport>)> {
+fn collate_raw_dylibs(
+    sess: &Session,
+    used_libraries: &[NativeLib],
+) -> Vec<(String, Vec<DllImport>)> {
     let mut dylib_table: FxHashMap<String, FxHashSet<DllImport>> = FxHashMap::default();
 
     for lib in used_libraries {
@@ -551,6 +554,24 @@ fn collate_raw_dylibs(used_libraries: &[NativeLib]) -> Vec<(String, Vec<DllImpor
                 format!("{}.dll", name)
             };
             dylib_table.entry(name).or_default().extend(lib.dll_imports.iter().cloned());
+        }
+    }
+
+    // Check for multiple imports with the same name but different calling conventions or
+    // (when relevant) argument list sizes.  Rustc only signals an error for this if the
+    // declarations are at the same scope level; if one shadows the other, we only get a lint
+    // warning.
+    for (library, imports) in &dylib_table {
+        let mut import_table: FxHashMap<Symbol, &DllImport> = FxHashMap::default();
+        for import in imports {
+            if let Some(old_import) = import_table.insert(import.name, &import) {
+                if import != old_import {
+                    sess.fatal(&format!("multiple inconsistent definitions of external function `{}` from library `{}`",
+                        import.name,
+                        library,
+                    ));
+                }
+            }
         }
     }
 
