@@ -344,6 +344,7 @@ fn link_rlib<'a, B: ArchiveBuilder<'a>>(
         }
     }
 
+    println!("calling collate_raw_dylibs for out_filename {:?}", out_filename);
     for (raw_dylib_name, raw_dylib_imports) in
         collate_raw_dylibs(sess, &codegen_results.crate_info.used_libraries)
     {
