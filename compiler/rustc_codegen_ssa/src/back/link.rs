@@ -541,6 +541,9 @@ fn collate_raw_dylibs(
     sess: &Session,
     used_libraries: &[NativeLib],
 ) -> Vec<(String, Vec<DllImport>)> {
+    use std::io::Write;
+    println!("in collate_raw_dylibs");
+    std::io::stdout().flush().unwrap();
     let mut dylib_table: FxHashMap<String, FxHashSet<DllImport>> = FxHashMap::default();
 
     for lib in used_libraries {
@@ -564,6 +567,7 @@ fn collate_raw_dylibs(
     for (library, imports) in &dylib_table {
         let mut import_table: FxHashMap<Symbol, &DllImport> = FxHashMap::default();
         for import in imports {
+            println!("inserting ({}, {:?})", import.name, import);
             if let Some(old_import) = import_table.insert(import.name, &import) {
                 if import != old_import {
                     sess.fatal(&format!("multiple inconsistent definitions of external function `{}` from library `{}`",

@@ -407,6 +407,7 @@ impl Collector<'tcx> {
     }
 
     fn build_dll_import(&self, abi: Abi, item: &hir::ForeignItemRef<'_>) -> DllImport {
+        println!("target arch = {}", self.tcx.sess.target.arch);
         let calling_convention = if self.tcx.sess.target.arch == "x86" {
             match abi {
                 Abi::C { .. } | Abi::Cdecl => DllCallingConvention::C,
