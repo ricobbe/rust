@@ -1,0 +1,2 @@
+extern_1 f
+extern_2 f
